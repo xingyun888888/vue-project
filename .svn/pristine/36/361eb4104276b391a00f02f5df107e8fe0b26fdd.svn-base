@@ -1,0 +1,34 @@
+import Vue from "vue"; //引入vue
+import App from "./App"; //引入app
+import routers from './router'; //引入路由文件
+import 'babel-polyfill'; //引入babel-polyfill解决es6兼容问题
+import ElementUI from "element-ui"; //引入elementUI
+import 'font-awesome/css/font-awesome.min.css' //引入font-awesome图标
+import axios from "axios"; //引入axios HTTP客户端
+import querystring from "querystring";
+import "../theme/index.css"; //引入elementUI 主题配置文件
+import util from "./common/util"; //引入自定义全局工具类
+
+
+Vue.prototype.$ajax = axios; //将axios绑定在Vue原型上重命名为$ajax
+Vue.use(util); //使用自定义全局工具类
+Vue.use(ElementUI); //使用elementUI组件
+Vue.config.productionTip = false; //关闭生产提示
+
+
+
+
+//配置axios默认请求全局配置
+// axios.defaults.baseURL = 'http://10.100.127.95:8080/sys/';
+axios.defaults.baseURL = 'http://10.100.127.96:8081/';
+
+
+
+
+new Vue({
+  el: "#app",
+  router: routers,
+  template: "<App/>",
+  components: { App },
+  render: h => h(App)
+});

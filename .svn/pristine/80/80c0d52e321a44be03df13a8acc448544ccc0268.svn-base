@@ -1,0 +1,122 @@
+<template>
+  <div class="login" @keyup.enter="postLogin()">
+    <div class="content">
+        <div class="login-form">
+        <div class="form-header">
+          <h3 class="form-title">登录
+            <span class="form-title company">长城证券</span>
+          </h3>
+        </div>
+        <div class="form-group">
+          <p>账号</p>
+          <input class="form-control account-input" @keyup="checkUserName()" type="text" placeholder="请输入账号" maxlength="30" name="username" v-model="username" />
+          <img class="account-check-ok" v-show="usnok" src="../assets/choose@2x.png">
+        </div>
+        <div class="form-group">
+          <p>密码</p>
+          <input class="form-control password-input" @keyup="checkPassWord()" type="password" placeholder="请输入密码" maxlength="30" name="password" v-model="password" />
+          <img class="password-check-ok" v-show="pwdok" src="../assets/choose@2x.png">
+        </div>
+        <div class="form-actions">
+          <div class="login-button" @click="postLogin()">
+            <span v-if="!loading">登录</span>
+            <i v-if="loading" class="el-icon-loading"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+var qs = require('qs');
+
+export default {
+  name: 'login',
+  data() {
+    return {
+      username: '',
+      password: '',
+      usnok: false,
+      pwdok: false,
+      loading: false
+    }
+  },
+  methods: {
+    checkUserName() {
+      var mailReg = /^[A-z0-9][A-z0-9_]+@[A-z0-9_-]+\.[A-z]+$/i;
+      var phoneReg = /^1[34578]\d{9}$/g;
+      var testAccountReg = /^[A-z0-9_]{3,30}$/g;
+      if (mailReg.test(this.username) || phoneReg.test(this.username) || testAccountReg.test(this.username)) {
+        this.usnok = true;
+      } else {
+        this.usnok = false;
+      }
+    },
+    checkPassWord() {
+      var pwdReg = /^[A-z0-9_]{6,30}$/g;
+      if (pwdReg.test(this.password)) {
+        this.pwdok = true;
+      } else {
+        this.pwdok = false;
+      }
+    },
+    postLogin() {
+      this.loading = true;
+      var _this = this;
+      var url = '/login';
+
+      var requestData = {
+        'account': this.username,
+        'password': this.password,
+//        'lang': this.langFormater()
+      }
+
+      this.$ajax({
+        method: 'post',
+        url: url,
+        data: qs.stringify(requestData)
+      }).then(function (response) {
+        var res = response.data;
+        if (res.code == 200) {
+          window.localStorage.setItem('ut', response.headers["x-api-token"]);
+          window.localStorage.setItem('uid', res.body.uuid);
+          window.localStorage.setItem('userIcon', res.body.avatar);
+          window.localStorage.setItem('userName', res.body.name);
+          window.localStorage.setItem('userType', res.body.userType);
+          window.localStorage.setItem('organizationName', res.body.organizationName);
+          window.localStorage.setItem('organizationType', res.body.organizationType);
+          window.localStorage.setItem('avatar', res.body.avatar);
+          _this.$router.push({ path: '/management' })
+        } else {
+          _this.$message({
+            message: res.message,
+            type: 'warning'
+          });
+        }
+        _this.loading = false;
+      }).catch(function (err) {
+        console.log('请求失败' + err);
+          _this.$message({
+            message: '网络无法连接，请稍后再试',
+            type: 'warning'
+          });
+        _this.loading = false;
+      });
+    }
+  },
+  created() {
+
+  },
+  mounted() {
+
+  }
+}
+
+
+</script>
+
+
+<style rel="stylesheet/scss" lang="scss" scoped src="../style/login.scss">
+
+</style>

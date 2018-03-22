@@ -1,0 +1,497 @@
+<template>
+  <div class="container-body">
+    <el-tabs v-model="activeName2" stripe type="border-card" class="tabs-body">
+      <el-tab-pane label="用户列表" style="margin-top:30px;" name="userList">
+        <el-table :data="tableData" stripe style="width: 100%">
+          <el-table-column prop="jobNumber" label="工号" align="center" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+          <el-table-column prop="companyAffiliation" label="归属公司" align="center" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+          <el-table-column prop="attributionDepartment" label="归属部门" align="center" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+          <el-table-column prop="username" label="登入名" align="center" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+          <el-table-column prop="name" label="姓名" align="center" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+          <el-table-column prop="iphone" label="电话" align="center" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+          <el-table-column prop="phone" label="手机" align="center" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+          <el-table-column label="操作" align="center" width="230" :show-overflow-tooltip="showOverflowTooltip">
+            <template scope="scope">
+              <el-button type="info" @click="modification(scope.$index,tableData)">修改</el-button>
+              <el-button type="danger" @click="handleDelete(scope.$index, tableData)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div class="pagination-block" style="margin-top:20px;">
+          <el-pagination
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="1"
+            :page-sizes="[10, 15,20]"
+            :page-size="pageSize"
+            layout="prev, pager, next, jumper, sizes"
+            :total="total">
+          </el-pagination>
+        </div>
+        <!--模态框-->
+        <el-dialog
+          :visible.sync="dialogVisible"
+          title="用户修改"
+          width="30%">
+          <el-form ref="form" :model="modificationForm" label-width="80px">
+            <el-form-item label="所属公司:" label-width="128px" class="left-justifying">
+              <el-select v-model="modificationForm.subordinateCompanies" placeholder="请选择机构" style='width:380px'>
+                <el-option label="区域一" value="1"></el-option>
+                <el-option label="区域二" value="2"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="所属部门:" label-width="128px" class="left-justifying">
+              <el-select v-model="modificationForm.subordinateDepartment" placeholder="请选择部门" style='width:380px'>
+                <el-option label="区域一" value="1"></el-option>
+                <el-option label="区域二" value="2"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="工号:" label-width="128px">
+              <el-col style="width:380px;">
+                <el-input v-model="modificationForm.jobNumber"></el-input>
+              </el-col>
+            </el-form-item>
+            <el-form-item label="姓名:" label-width="128px">
+              <el-col style="width:380px;">
+                <el-input v-model="modificationForm.name"></el-input>
+              </el-col>
+            </el-form-item>
+            <el-form-item label="登录名:" label-width="128px">
+              <el-col style="width:380px;">
+                <el-input v-model="modificationForm.userName"></el-input>
+              </el-col>
+            </el-form-item>
+            <el-form-item label="密码:" label-width="128px">
+              <el-col style="width:380px;">
+                <el-input v-model="modificationForm.password"></el-input>
+              </el-col>
+            </el-form-item>
+            <el-form-item label="确认密码:" label-width="128px">
+              <el-col style="width:380px;">
+                <el-input v-model="modificationForm.confirmPassword"></el-input>
+              </el-col>
+            </el-form-item>
+            <el-form-item label="邮箱:" label-width="128px">
+              <el-col style="width:380px;">
+                <el-input v-model="modificationForm.mailbox"></el-input>
+              </el-col>
+            </el-form-item>
+            <el-form-item label="电话:" label-width="128px">
+              <el-col style="width:380px;">
+                <el-input v-model="modificationForm.phone"></el-input>
+              </el-col>
+            </el-form-item>
+            <el-form-item label="手机:" label-width="128px">
+              <el-col style="width:380px;">
+                <el-input v-model="modificationForm.iphone"></el-input>
+              </el-col>
+            </el-form-item>
+            <el-form-item label="是否允许登录:" label-width="128px" class="left-justifying">
+              <el-select v-model="modificationForm.whether"  style='width:70px' placeholder="">
+                <el-option label="是" value="1"></el-option>
+                <el-option label="否" value="2"></el-option>
+              </el-select>
+              <span class="prompt-text">“是”代表此账号允许登陆，“否”则表示此账号不允许登陆</span>
+            </el-form-item>
+            <el-form-item label="用户类型:" label-width="128px" class="left-justifying">
+              <el-select v-model="modificationForm.userType"  style='width:380px'>
+                <el-option label="区域一" value="1"></el-option>
+                <el-option label="区域二" value="2"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="用户角色:" label-width="128px" class="left-justifying">
+              <el-checkbox-group v-model="modificationForm.userRole">
+                <el-checkbox label="本部门管理员" name="type"></el-checkbox>
+                <el-checkbox label="过会审核人" name="type"></el-checkbox>
+                <el-checkbox label="部门管理员" name="type"></el-checkbox>
+                <el-checkbox label="FA岗位" name="type"></el-checkbox>
+                <el-checkbox label="TA岗位" name="type"></el-checkbox>
+                <el-checkbox label="估值岗位" name="type"></el-checkbox>
+                <el-checkbox label="公司管理员" name="type"></el-checkbox>
+                <el-checkbox label="太平洋证券" name="type"></el-checkbox>
+                <el-checkbox label="普通用户" name="type"></el-checkbox>
+                <el-checkbox label="申报人" name="type"></el-checkbox>
+              </el-checkbox-group>
+            </el-form-item>
+            <div class="comment left-justifying">
+              <span>备注:</span>
+              <textarea  v-model="modificationForm.remark" style=" max-width:calc(100% - 200px);"></textarea>
+            </div>
+          </el-form>
+          <span slot="footer" class="dialog-footer">
+            <el-button @click="dialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="confirm">保 存</el-button>
+          </span>
+        </el-dialog>
+      </el-tab-pane>
+      <!--机构添加-->
+      <el-tab-pane label="用户添加" name="userAdd">
+        <el-form ref="form" :model="form" :rules="userAppend" label-width="80px" class="institutions-add">
+          <el-form-item label="所属公司:" label-width="128px">
+            <el-select v-model="form.subordinateCompanies" placeholder="请选择机构" style='width:380px'>
+              <el-option label="区域一" value="1"></el-option>
+              <el-option label="区域二" value="2"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="所属部门:" label-width="128px" prop="subordinateDepartment">
+            <el-select v-model="form.subordinateDepartment" placeholder="请选择部门" style='width:380px'>
+              <el-option label="区域一" value="1"></el-option>
+              <el-option label="区域二" value="2"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="工号:" label-width="128px" prop="jobNumber">
+            <el-col style="width:380px;">
+              <el-input v-model="form.jobNumber"></el-input>
+            </el-col>
+          </el-form-item>
+          <el-form-item label="姓名:" label-width="128px" prop="name">
+            <el-col style="width:380px;">
+              <el-input v-model="form.name"></el-input>
+            </el-col>
+          </el-form-item>
+          <el-form-item label="登录名:" label-width="128px" prop="userName">
+            <el-col style="width:380px;">
+              <el-input v-model="form.userName"></el-input>
+            </el-col>
+          </el-form-item>
+          <el-form-item label="密码:" label-width="128px" prop="password">
+            <el-col style="width:380px;">
+              <el-input type="password" name="password"  style="display:none"></el-input>
+              <el-input type="password" v-model="form.password"></el-input>
+            </el-col>
+          </el-form-item>
+          <el-form-item label="确认密码:" label-width="128px" prop="confirmPassword">
+            <el-col style="width:380px;">
+              <el-input type="password" name="password"  style="display:none"></el-input>
+              <el-input type="password" v-model="form.confirmPassword"></el-input>
+            </el-col>
+          </el-form-item>
+          <el-form-item label="邮箱:" label-width="128px" prop="mailbox">
+            <el-col style="width:380px;">
+              <el-input v-model="form.mailbox"></el-input>
+            </el-col>
+          </el-form-item>
+          <el-form-item label="电话:" label-width="128px">
+            <el-col style="width:380px;">
+              <el-input v-model="form.phone"></el-input>
+            </el-col>
+          </el-form-item>
+          <el-form-item label="手机:" label-width="128px" prop="iphone">
+            <el-col style="width:380px;">
+              <el-input v-model="form.iphone"></el-input>
+            </el-col>
+          </el-form-item>
+          <el-form-item label="是否允许登录:" label-width="128px" prop="whether">
+            <el-select v-model="form.whether"  style='width:70px' placeholder="">
+              <el-option label="是" value="1"></el-option>
+              <el-option label="否" value="2"></el-option>
+            </el-select>
+            <span class="prompt-text">“是”代表此账号允许登陆，“否”则表示此账号不允许登陆</span>
+          </el-form-item>
+          <el-form-item label="用户类型:" label-width="128px" prop="userType">
+            <el-select v-model="form.userType"  style='width:380px'>
+              <el-option label="区域一" value="1"></el-option>
+              <el-option label="区域二" value="2"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="用户角色:" label-width="128px" prop="userRole">
+            <el-checkbox-group v-model="form.userRole">
+              <el-checkbox label="1" name="type">本部门管理员</el-checkbox>
+              <el-checkbox label="2" name="type">过会审核人</el-checkbox>
+              <el-checkbox label="3" name="type">部门管理员</el-checkbox>
+              <el-checkbox label="4" name="type">FA岗位</el-checkbox>
+              <el-checkbox label="5" name="type">TA岗位</el-checkbox>
+              <el-checkbox label="6" name="type">估值岗位</el-checkbox>
+              <el-checkbox label="7" name="type">公司管理员</el-checkbox>
+              <el-checkbox label="8" name="type">太平洋证券</el-checkbox>
+              <el-checkbox label="9" name="type">普通用户</el-checkbox>
+              <el-checkbox label="10" name="type">申报人</el-checkbox>
+            </el-checkbox-group>
+          </el-form-item>
+          <div class="comment">
+            <span>备注:</span>
+            <textarea  v-model="form.remark" style=" max-width:calc(100% - 200px);"></textarea>
+          </div>
+          <el-form-item style="margin-top:30px;">
+            <el-button type="primary" @click="saveBtn('form')">保存</el-button>
+            <el-button @click.native="getBack">返回</el-button>
+          </el-form-item>
+        </el-form>
+      </el-tab-pane>
+    </el-tabs>
+  </div>
+</template>
+
+<script>
+//  import data from '../../../mock/mock.js';
+  var querystring = require('querystring');
+  export default {
+    name: 'cachePage',
+    data() {
+      var passwordVerify = (rule, value, callback) => {
+        setTimeout(() => {
+          if (value!=this.form.password){
+            callback(new Error('请填入相同密码'));
+          }
+          else {
+            callback();
+          }
+        }, 500);
+      };
+      var mailboxVerify = (rule, value, callback) => {
+        setTimeout(() => {
+          if (!value || !/^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+(.[a-zA-Z0-9_-])+/i.test(value)){
+            callback(new Error('请书写正确邮箱格式'));
+          }
+          else {
+            callback();
+          }
+        }, 500);
+      };
+      return {
+        activeName2:'userList',
+        showOverflowTooltip:true,
+        pageNum: 1,
+        pages: 2,
+        pageSize: 15,
+        total: 0,
+        dialogVisible:false,
+        tableData:[],
+        form: {
+          subordinateCompanies : '',  //所属公司
+          subordinateDepartment:'', //所属部门
+          jobNumber:'', //工号
+          name:'',   //姓名
+          userName:'',  //登入名
+          password:'', //密码
+          confirmPassword:'',  //确认密码
+          mailbox:'',//邮箱
+          phone:'',   //电话
+          iphone:'', //手机
+          whether:'',     //是否允许
+          userType:'', //用户类型
+          userRole:[],  //用户角色
+          remark:'', //备注
+        },
+        modificationForm: {
+          subordinateCompanies : '',  //所属公司
+          subordinateDepartment:'', //所属部门
+          jobNumber:'', //工号
+          name:'',   //姓名
+          userName:'',  //登入名
+          password:'', //密码
+          confirmPassword:'',  //确认密码
+          mailbox:'',//邮箱
+          phone:'',   //电话
+          iphone:'', //手机
+          whether:'',     //是否允许
+          userType:'', //用户类型
+          userRole:[],  //用户角色
+          remark:'', //备注
+        },
+        userAppend:{
+          subordinateDepartment:[
+            { required: true, message: '请选择', trigger: 'change' },
+          ],
+          jobNumber:[
+            { required: true, message: '工号不能为空', trigger: 'blur' },
+          ],
+          name:[
+            { required: true, message: '姓名不能为空', trigger: 'blur' },
+          ],
+          userName:[
+            { required: true, message: '登录名不能为空', trigger: 'blur' },
+          ],
+          password:[
+            { required: true, message: '密码不能为空', trigger: 'blur' },
+          ],
+          confirmPassword:[
+            { required: true, message: '密码不能为空', trigger: 'blur' },
+            { validator: passwordVerify, trigger: 'blur' }
+          ],
+          whether:[
+            { required: true, message: '请选择', trigger: 'change' },
+          ],
+          userRole:[
+            {type:'array', required: true, message: '请选择用户角色', trigger: 'change' }
+          ],
+          mailbox:[
+            {required: true, message: '邮箱不能为空', trigger: 'blur' },
+            {validator: mailboxVerify,trigger:'blur'}
+          ],
+          iphone:[
+            {required:true, message:'手机不能为空',trigger:'blur'}
+          ],
+          userType:[
+            { required: true, message: '请选择用户类型', trigger: 'change' },
+          ]
+        }
+      }
+    },
+    methods: {
+      //返回按钮
+      getBack(){
+        this.activeName2 = 'userList';
+      },
+      //修改按钮
+      modification(index, row){
+        this.dialogVisible = true;
+        this.modificationForm.jobNumber = row[index].jobNumber;
+        this.modificationForm.name = row[index].name;
+        this.modificationForm.iphone = row[index].iphone;
+        this.modificationForm.phone = row[index].phone;
+        this.modificationForm.userName = row[index].username;
+      },
+      //确定按钮
+      confirm(){
+        this.dialogVisible  = false;
+        this.$message({
+          message: '保存成功！',
+          type: 'success'
+        });
+      },
+      //删除row 按钮
+      handleDelete(index, row) {
+        var _this = this;
+        var requestData = {
+          id:row[index].id
+        }
+        _this.$confirm('要删除该机构及所有子机构项吗？', '提示',{
+          cancelButtonText:'取消',
+          confirmButtonText:'确认'
+        }).then(() => {
+          this.$ajax({
+            method:'POST',
+            url:'user/remove',
+            data:querystring.stringify(requestData),
+            dataType:'json'
+          }).then(function(response){
+            var res = response.data;
+            if(res.statusCode == 0){
+                _this.$message({
+                  message: '删除成功！',
+                  type: 'success'
+                });
+                row.splice(index, 1);
+             }else{
+              _this.requestErrorHandler(res);
+            }
+          }).catch(function(){
+            _this.catchErrorHandler();
+          })
+        }).catch(() => {
+
+        });
+      },
+      //保存添加按钮
+      saveBtn(form){
+        var _this = this;
+        console.log(this.form)
+        var requestData = {
+          "dept.id":this.form.subordinateDepartment,
+          roleList:this.form.userRole,
+          name:this.form.name,
+          username:this.form.userName,
+          password:this.form.password,
+          no:this.form.jobNumber,
+          email:this.form.mailbox,
+          mobile:this.form.iphone,
+          userType:this.form.userType,
+          photo:'',  //用户头像
+          loginFlag:this.form.whether
+        }
+        this.$refs[form].validate((valid) => {
+          if(valid){
+            this.$ajax({
+              method:'POST',
+              url:'user/save',
+              data:querystring.stringify(requestData),
+              dataType:'json'
+            }).then(function (response) {
+              var res =  response.data;
+              if(res.statusCode == 0){
+                _this.$message({
+                  message: '保存成功',
+                  type: 'success'
+                });
+                _this.activeName2 = 'userList';
+                _this.requestTable();
+              } else {
+                _this.$message({
+                  message: res.body+'!',
+                  type: 'error'
+                });
+              }
+            }).catch(function () {
+              _this.$message({
+                message: "保存失败，请核查填入内容！",
+                type: 'error'
+              });
+            });
+          }else{
+            _this.$message({
+              message: "保存失败，请核查填入内容！",
+              type: 'error'
+            });
+          }
+        })
+      },
+      handleSizeChange(val) {
+        this.pageSize = val;
+        this.requestTable();
+      },
+      handleCurrentChange(val) {
+        this.pageNum = val;
+        this.requestTable();
+      },
+      requestTable(){
+        var _this = this;
+        var requestData = {
+          pageNum: this.pageNum,
+          pageSize: this.pageSize,
+        }
+        this.$ajax({
+          method: 'POST',
+          url:'user/listData',
+          data:querystring.stringify(requestData)
+        }).then(function (response) {
+          var res = response.data;
+          if (res.statusCode == 0) {
+            _this.tableData = [];
+            _this.renderTable(res.body.list); //渲染表格数据
+            _this.setPagination(res.body) //设定分页
+          }
+        })
+      },
+      renderTable(data) {
+        for (var i = 0; i < data.length; i++) {
+          var tableItem = {
+            jobNumber: data[i].loginFlag,
+            username:data[i].username,
+            name:data[i].name,
+            iphone:data[i].mobile,
+            phone:data[i].mobile,
+            id:data[i].id
+          }
+          this.tableData.push(tableItem);
+        }
+      },
+      setPagination(data) {
+        this.pages = data.pages;
+        this.pageSize = data.pageSize;
+        this.total = data.total;
+      },
+    },
+    created: function () {
+        this.requestTable();
+    },
+    mounted() {
+
+    }
+  }
+</script>
+
+<style rel="stylesheet/scss" lang="scss" scoped>
+  @import "../../../style/layout.scss";
+  @import "../../../style/lnstitutional.scss";
+</style>

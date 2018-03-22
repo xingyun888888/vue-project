@@ -1,0 +1,237 @@
+<template>
+  <div class="container-body">
+    <div class="btn">
+      <el-button type="primary" plain @click="btnCompile">产品编辑</el-button>
+      <el-button type="primary" plain>产品审核</el-button>
+    </div>
+    <!--select-->
+    <div class="sel">
+      <div>
+        <span>产品名称:&nbsp;&nbsp;</span>
+        <el-select v-model="productName" placeholder="请选择" style="width:200px;">
+          <el-option
+            v-for="item in options"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+      </div>
+      <div>
+        <span>管理人名称:&nbsp;&nbsp;</span>
+        <el-select v-model="custodianName" placeholder="请选择" style="width:200px;">
+          <el-option
+            v-for="item in options"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+      </div>
+      <div>
+        <span>产品状态:&nbsp;&nbsp;</span>
+        <el-select v-model="productState" placeholder="请选择" style="width:120px;">
+          <el-option
+            v-for="item in options"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+      </div>
+      <div style="margin-left:10px;">
+          <el-button type="primary" @click="searchList">查询</el-button>
+      </div>
+    </div>
+    <!--表格-->
+    <div>
+      <el-table :data="tableData2" border style="width: 100%">
+        <el-table-column prop="serialNumber" label="序号" width="80" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+        <el-table-column prop="productCode" label="产品代码" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+        <el-table-column prop="productName" label="产品名称" width="220" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+        <el-table-column prop="custodianName" label="管理人名称" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+        <el-table-column prop="productState" label="产品状态" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+        <el-table-column prop="type" label="分级类型" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+        <el-table-column prop="productSource" label="产品来源" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+        <el-table-column prop="date" label="成立日期" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+        <el-table-column prop="checked" label="是否审核" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+      </el-table>
+      <div class="pagination-block" style="margin-top:20px;">
+        <el-pagination
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+          :current-page="1"
+          :page-sizes="[10, 15,20]"
+          :page-size="pageSize"
+          layout="prev, pager, next, jumper, sizes"
+          :total="total">
+        </el-pagination>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  import data from '../../mock/mock.js';
+  import bus from '@/bus.js';
+  var querystring = require('querystring');
+  export default {
+    name: 'cachePage',
+    data() {
+      return {
+        pageNum: 1,
+        pages: 2,
+        pageSize: 10,
+        total: 0,
+        tableData2:[],
+        num:0,
+        showOverflowTooltip:true,
+        options: [{
+          value: '1',
+          label: '黄金糕'
+        }, {
+          value: '2',
+          label: '双皮奶'
+        }, {
+          value: '3',
+          label: '蚵仔煎'
+        }, {
+          value: '4',
+          label: '龙须面'
+        }, {
+          value: '5',
+          label: '北京烤鸭'
+        }],
+        productName:'', //产品名称
+        custodianName:'',  //管理人名称
+        productState:'',   //产品状态
+        tableData: [{
+          date: '',
+          name: '',
+          address: ''
+        }, {
+          date: '',
+          name: '',
+          address: ''
+        }, {
+          date: '',
+          name: '',
+          address: ''
+        }, {
+          date: '',
+          name: '',
+          address: ''
+        }],
+      }
+    },
+    methods: {
+      handleSizeChange(val) {
+        this.pageSize = val;
+        this.requestTable();
+      },
+      handleCurrentChange(val) {
+        this.pageNum = val;
+        this.requestTable();
+      },
+      requestTable(){
+        var _this = this;
+        var requestData = {
+          pageNum: this.pageNum,
+          pageSize: this.pageSize,
+        }
+        this.$ajax({
+          method: 'POST',
+          url:'http://jji.cn',
+          data:requestData
+        }).then(function (response) {
+          var res = response.data;
+          if (res.code == 200) {
+            _this.tableData2 = [];
+            _this.renderTable(res.body.list); //渲染表格数据
+            _this.setPagination(res.body) //设定分页
+          }
+        })
+      },
+      renderTable(data) {
+        for (var i = 0; i < data.length; i++) {
+          this.num++;
+          var tableItem = {
+            serialNumber:this.num,
+            productCode: data[i].productCode,
+            productName: data[i].productName,
+            custodianName: data[i].custodianName,
+            productState:data[i].productState,
+            type:data[i].type,
+            productSource:data[i].productSource,
+            date:data[i].date,
+            checked:data[i].checked
+          }
+          this.tableData2.push(tableItem);
+        }
+      },
+      setPagination(data) {
+        this.pages = data.pages;
+        this.pageSize = data.pageSize;
+        this.total = data.total;
+      },
+
+
+      requsetTable(){
+        var _this = this;
+        this.$ajax({
+          method:'GET',
+          url:'product/listData',
+          dataType:'json'
+        }).then(function (response) {
+          var res = response.data;
+          if (res.statusCode == 0) {
+
+          }else{
+            _this.requestErrorHandler(res);
+          }
+        }).catch(function(error){
+          _this.catchErrorHandler();
+        })
+      },
+      searchList(){
+        alert(this.formatTime(1519833600000))
+        var _this = this;
+        var requestDate = {
+          code:'SM7852',
+          mgrCode:'P10086',
+          status:'0'
+        }
+        this.$ajax({
+          method:'POST',
+          url:'product/listData',
+          data:querystring.stringify(requestDate),
+          dataType:'json'
+        }).then(function (response) {
+          var res = response.data;
+          if (res.statusCode == 0) {
+
+          }else{
+            _this.requestErrorHandler(res);
+          }
+        }).catch(function(error){
+          _this.catchErrorHandler();
+        })
+      },
+      btnCompile:function(){
+        bus.$emit('message','/productCompile');
+        this.$router.push({path: '/productCompile'});
+      }
+
+    },
+    created: function () {
+    },
+    mounted() {
+        this.requestTable(); //mock 数据方法
+    }
+  }
+</script>
+
+<style rel="stylesheet/scss" lang="scss" scoped>
+  @import "../../style/layout.scss";
+
+</style>

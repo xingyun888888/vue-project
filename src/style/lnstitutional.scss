@@ -1,0 +1,44 @@
+.institutions-add{
+  margin-left:5%;
+  margin-top:30px;
+  p{
+    clear:both;
+    border-bottom:1px dashed #F1F1F1;
+  }
+}
+.prompt-text{
+  margin-left:20px;
+  color:#aaa;
+}
+.comment{
+  span{
+    display:inline-block;
+    width:117px;
+    text-align:right;
+    vertical-align: top;
+    margin-right: 8px;
+  }
+  textarea{
+    width:369px;
+    max-width:369px;
+    outline:none;
+    height:120px;
+    padding:5px;
+  }
+  textarea:focus{
+    border:1px solid #47bd96;
+  }
+}
+.left-justifying{
+  text-align:left;
+}
+.basic-information{
+  width:128px;
+  text-align: right;
+  margin-bottom:6px;
+}
+.cut-off{
+  display:block;
+  border-bottom:1px solid #bebebe;
+  margin-bottom:20px;
+}

@@ -1,0 +1,410 @@
+<template>
+  <div class="container-body">
+    <el-tabs v-model="activeName" type="border-card" class="tabs-body">
+      <el-tab-pane label="角色列表" style="margin-top:30px;" name="roleList">
+        <el-table :data="tableData" stripe style="width: 100%">
+          <el-table-column prop="roleName" label="角色名称" align="center" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+          <el-table-column prop="englishName" label="英文名称" align="center" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+          <el-table-column prop="organization" label="归属机构" align="center" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+          <el-table-column prop="dataRange" label="数据范围" align="center" :show-overflow-tooltip="showOverflowTooltip"></el-table-column>
+          <el-table-column label="操作" align="center"  width="330" :show-overflow-tooltip="showOverflowTooltip">
+            <template scope="scope" :data="tableData">
+              <el-button type="info">分配</el-button>
+              <el-button type="success" @click="modification(scope.$index,tableData)">修改</el-button>
+              <el-button type="danger" @click="handleDelete(scope.$index, tableData)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div class="pagination-block" style="margin-top:20px;">
+          <el-pagination
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="1"
+            :page-sizes="[10, 15,20]"
+            :page-size="pageSize"
+            layout="prev, pager, next, jumper, sizes"
+            :total="total">
+          </el-pagination>
+        </div>
+        <!--模态框-->
+        <el-dialog
+          :visible.sync="dialogVisible"
+          title="角色修改"
+          width="30%">
+          <el-form ref="form" :model="modificationFormform" label-width="80px" class="institutions-add">
+            <el-form-item label="归属机构:" label-width="128px" class="left-justifying">
+              <el-select v-model="modificationFormform.organization" filterable placeholder="请选择机构" style='width:380px'>
+                <el-option label="区域一" value="shanghai"></el-option>
+                <el-option label="区域二" value="beijing"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="角色名称:" label-width="128px">
+              <el-col style="width:380px;">
+                <el-input v-model="modificationFormform.roleName"></el-input>
+              </el-col>
+            </el-form-item>
+            <el-form-item label="英文名称:" label-width="128px">
+              <el-col style="width:380px;">
+                <el-input v-model="modificationFormform.englishName"></el-input>
+              </el-col>
+            </el-form-item>
+            <el-form-item label="角色编码:" label-width="128px">
+              <el-col style="width:380px;">
+                <el-input v-model="modificationFormform.code"></el-input>
+              </el-col>
+            </el-form-item>
+            <el-form-item label="角色类型:" label-width="128px" class="left-justifying">
+              <el-select v-model="modificationFormform.roleType" placeholder="请选择" style='width:270px'>
+                <el-option label="区域一" value="shanghai"></el-option>
+                <el-option label="区域二" value="beijing"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="是否系统数据:" label-width="128px" class="left-justifying">
+              <el-select v-model="modificationFormform.whetherData"  style='width:70px' placeholder="">
+                <el-option label="是" value="shanghai"></el-option>
+                <el-option label="否" value="beijing"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="是否可用:" label-width="128px" class="left-justifying">
+              <el-select v-model="modificationFormform.whether"  style='width:70px' placeholder="">
+                <el-option label="是" value="shanghai"></el-option>
+                <el-option label="否" value="beijing"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="数据范围:" label-width="128px" class="left-justifying">
+              <el-select v-model="modificationFormform.dataRange" placeholder="请选择" style='width:270px'>
+                <el-option label="区域一" value="shanghai"></el-option>
+                <el-option label="区域二" value="beijing"></el-option>
+              </el-select>
+            </el-form-item>
+            <div class="comment left-justifying">
+              <span>备注:</span>
+              <textarea  v-model="modificationFormform.remark" style=" max-width:calc(100% - 200px);margin-bottom:25px;"></textarea>
+            </div>
+          </el-form>
+          <span slot="footer" class="dialog-footer">
+            <el-button @click="dialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="confirm">保 存</el-button>
+          </span>
+        </el-dialog>
+      </el-tab-pane>
+      <!--机构添加-->
+      <el-tab-pane label="角色添加"  name="roleAdd">
+        <el-form ref="form" :model="form" :rules="institutionsAdd" label-width="80px" class="institutions-add">
+          <el-form-item label="归属机构:" label-width="128px">
+            <el-select v-model="form.organization" placeholder="请选择机构" style='width:380px'>
+              <el-option label="区域一" value="shanghai"></el-option>
+              <el-option label="区域二" value="beijing"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="角色名称:" label-width="128px" prop="roleName">
+            <el-col style="width:380px;">
+              <el-input v-model="form.roleName"></el-input>
+            </el-col>
+          </el-form-item>
+          <el-form-item label="英文名称:" label-width="128px" prop="englishName">
+            <el-col style="width:380px;">
+              <el-input v-model="form.englishName"></el-input>
+            </el-col>
+            <span class="prompt-text">工作流用户组标识</span>
+          </el-form-item>
+          <el-form-item label="角色编码:" label-width="128px" prop="code">
+            <el-col style="width:380px;">
+              <el-input v-model="form.code"></el-input>
+            </el-col>
+          </el-form-item>
+          <el-form-item label="角色类型:" label-width="128px">
+            <el-select v-model="form.roleType" placeholder="请选择" style='width:270px'>
+              <el-option label="区域一" value="shanghai"></el-option>
+              <el-option label="区域二" value="beijing"></el-option>
+            </el-select>
+            <span class="prompt-text">工作流组用户组类型（任务分配：assignment、管理角色：security-role、普通角色：user）</span>
+          </el-form-item>
+          <el-form-item label="是否系统数据:" label-width="128px">
+            <el-select v-model="form.whetherData"  style='width:70px' placeholder="">
+              <el-option label="是" value="shanghai"></el-option>
+              <el-option label="否" value="beijing"></el-option>
+            </el-select>
+            <span class="prompt-text">“是”代表此数据只有超级管理员能进行修改，“否”则表示拥有角色修改人员的权限都能进行修改</span>
+          </el-form-item>
+          <el-form-item label="是否可用:" label-width="128px">
+            <el-select v-model="form.whether"  style='width:70px' placeholder="">
+              <el-option label="是" value="shanghai"></el-option>
+              <el-option label="否" value="beijing"></el-option>
+            </el-select>
+            <span class="prompt-text">“是”代表此数据可用，“否”则表示此数据不可用</span>
+          </el-form-item>
+          <el-form-item label="数据范围:" label-width="128px">
+            <el-select v-model="form.dataRange" placeholder="请选择" style='width:270px'>
+              <el-option label="区域一" value="shanghai"></el-option>
+              <el-option label="区域二" value="beijing"></el-option>
+            </el-select>
+            <span class="prompt-text">特殊情况下，设置为“按明细设置”，可进行跨机构授权</span>
+          </el-form-item>
+          <div>
+            <span style="display: inline-block;width: 115px;text-align: right;">角色授权:</span>
+            <el-tree  :data="this.listTree" show-checkbox node-key="id" ref="tree" :default-expanded-keys="[]" :default-checked-keys="[]" :props="defaultProps">
+            </el-tree>
+          </div>
+          <div class="comment">
+            <span>备注:</span>
+            <textarea  v-model="form.remark" style=" max-width:calc(100% - 200px);margin-bottom:25px;"></textarea>
+          </div>
+          <el-form-item>
+            <el-button type="primary" @click="saveBtn('form')">保存</el-button>
+            <el-button @click.native="getBack">返回</el-button>
+          </el-form-item>
+        </el-form>
+      </el-tab-pane>
+    </el-tabs>
+  </div>
+</template>
+
+<script>
+  import data from '../../../mock/mock.js';
+  var querystring = require('querystring');
+  export default {
+    name: 'cachePage',
+    data() {
+      return {
+        defaultProps: {
+          children: 'children',
+          label: 'label'
+        },
+        listTree:[],  //树结构对象
+        pageNum: 1,
+        pages: 2,
+        pageSize: 15,
+        total: 0,
+        activeName:'roleList',
+        showOverflowTooltip:true,
+        dialogVisible:false,
+        tableData:[],
+        form: {
+          organization:'',  //归属机构
+          roleName:'',     //角色名称
+          code:'',     //角色编码
+          englishName:'',  //英文名称
+          roleType:'',   //角色类型
+          whetherData:'', //是否系统数据
+          whether:'',     //是否可用
+          dataRange:'',   //数据范围
+          remark:'', //备注
+        },
+        modificationFormform: {
+          organization:'',  //归属机构
+          roleName:'',     //角色名称
+          code:'',     //角色编码
+          englishName:'',  //英文名称
+          roleType:'',   //角色类型
+          whetherData:'', //是否系统数据
+          whether:'',     //是否可用
+          dataRange:'',   //数据范围
+          remark:'', //备注
+        },
+        institutionsAdd:{
+          roleName:[
+            { required: true, message: '角色名不能为空', trigger: 'change' },
+          ],
+          code:[
+            { required: true, message: '角色编码不能为空', trigger: 'change' },
+          ],
+          englishName:[
+            { required: true, message: '英文名称不能为空', trigger: 'change' },
+          ]
+        }
+      }
+    },
+    methods: {
+      //渲染DOM树
+
+      applyList(){
+          var list = window.sessionStorage.getItem('listTree');
+          var data = JSON.parse(list);
+          console.log(data[0].name)
+          if(data!=null){
+            for(var i=0;i<data.length;i++){
+              this.listTree.push({});
+              this.listTree[i].id = data[i].id;
+              this.listTree[i].label = data[i].name;
+              this.listTree[i].children = data[i].subMenu;
+              for(var j=0;j< data[i].subMenu.length;j++){
+                this.listTree[i].children[j].id = data[i].subMenu[j].id;
+                this.listTree[i].children[j].label = data[i].subMenu[j].name;
+                this.listTree[i].children[j].children = data[i].subMenu[j].subMenu;
+                for(var k=0;k< data[i].subMenu[j].subMenu.length;k++){
+                  this.listTree[i].children[j].children[k].id = data[i].subMenu[j].subMenu[k].id;
+                  this.listTree[i].children[j].children[k].label = data[i].subMenu[j].subMenu[k].name;
+                }
+              }
+            }
+          }
+      },
+      getCheckedKeys() {
+
+      },
+      //保存添加按钮
+      saveBtn(form){
+          var _this = this;
+          var requestData = {
+            "role.name":this.form.roleName,
+            "role.code":this.form.code,
+            "role.ename":this.form.englishName,
+            sysMenuList:this.$refs.tree.getCheckedKeys().join(),
+            remarks:this.form.remark
+          }
+        this.$refs[form].validate((valid) => {
+          if(valid){
+            this.$ajax({
+              method:'POST',
+              url:'role/save',
+              data:querystring.stringify(requestData),
+              dataType:'json'
+            }).then(function (response) {
+              var res =  response.data;
+              if(res.statusCode == 0){
+                _this.$message({
+                  message: '保存成功',
+                  type: 'success'
+                });
+                _this.activeName = 'roleList';
+                _this.requsetTable();
+              } else {
+                _this.$message({
+                  message: '保存失败，请核查填入内容！',
+                  type: 'error'
+                });
+              }
+            }).catch(function () {
+              _this.$message({
+                message: "保存失败，请核查填入内容！",
+                type: 'error'
+              });
+            });
+          }else{
+            _this.$message({
+              message: "保存失败，请核查填入内容！",
+              type: 'error'
+            });
+          }
+        })
+      },
+      //获取关键字
+      queryKeyword(){
+        console.log(this.value6);
+      },
+      //返回
+      getBack(){
+        this.activeName = 'roleList';
+      },
+      //修改按钮
+      modification(index, row){
+        this.dialogVisible = true;
+      },
+      //确认按钮
+      confirm(){
+        this.dialogVisible = false;
+        this.$message({
+          message: '保存成功！',
+          type: 'success'
+        });
+      },
+      //删除row 按钮
+      handleDelete(index, row) {
+        var _this = this;
+        var requestData = {
+          id:row[index].id
+        }
+        _this.$confirm('确定要删除该角色吗？', '提示',{
+          cancelButtonText:'取消',
+          confirmButtonText:'确认'
+        }).then(() => {
+          this.$ajax({
+            method:'POST',
+            url:'role/remove',
+            data:querystring.stringify(requestData),
+            dataType:'json'
+          }).then(function(response){
+            var res = response.data;
+            if(res.statusCode == 0){
+              _this.$message({
+                message: '删除成功！',
+                type: 'success'
+              });
+              row.splice(index, 1);
+            }else{
+              _this.requestErrorHandler(res);
+            }
+          }).catch(function(){
+            _this.catchErrorHandler();
+          })
+        }).catch(() => {
+
+        });
+      },
+
+      handleSizeChange(val) {
+        this.pageSize = val;
+        this.requsetTable();
+      },
+      handleCurrentChange(val) {
+        this.pageNum = val;
+        this.requsetTable();
+      },
+      //table数据
+      requsetTable(){
+        var _this = this;
+        var requestDate = {
+          pageNum:this.pageNum,
+          pageSize: this.pageSize,
+        }
+        this.$ajax({
+          method:'POST',
+          url:'role/listData',
+          data:querystring.stringify(requestDate),
+          dataType:'json'
+        }).then(function (response) {
+          var res = response.data;
+         if (res.statusCode == 0) {
+           _this.tableData = [];
+           _this.renderTable(res.body.list); //渲染表格数据
+           _this.setPagination(res.body) //设定分页
+         }else{
+           _this.requestErrorHandler(res);
+         }
+        }).catch(function(error){
+          _this.catchErrorHandler();
+        })
+      },
+      renderTable(data) {
+        for (var i = 0; i < data.length; i++) {
+          var tableItem = {
+            roleName: data[i].name,
+            englishName: data[i].ename,
+            organization: data[i].organization,
+            dataRange: data[i].dataRange,
+            id:data[i].id,
+          }
+          this.tableData.push(tableItem);
+        }
+      },
+      setPagination(data) {
+        this.pages = data.pages;
+        this.pageSize = data.pageSize;
+        this.total = data.total;
+      },
+    },
+    created: function () {
+      this.requsetTable();
+//      this.applyList();
+    },
+    mounted() {
+
+    }
+  }
+</script>
+
+<style rel="stylesheet/scss" lang="scss" scoped>
+  @import "../../../style/layout.scss";
+  @import "../../../style/lnstitutional";
+</style>

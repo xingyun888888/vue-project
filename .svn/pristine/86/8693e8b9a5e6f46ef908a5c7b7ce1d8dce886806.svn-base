@@ -1,0 +1,13 @@
+.container-body{
+  min-height:730px !important;
+}
+.sel{
+  margin:30px 0 30px 0;
+  >div{
+    display:inline-block;
+    margin-left:30px;
+    &:nth-child(1){
+      margin-left:0;
+    }
+  }
+}
