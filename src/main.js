@@ -16,7 +16,7 @@ Vue.use(ElementUI); //使用elementUI组件
 Vue.config.productionTip = false; //关闭生产提示
 
 
-
+console.dir(Vue);
 
 //配置axios默认请求全局配置
 // axios.defaults.baseURL = 'http://10.100.127.95:8080/sys/';
